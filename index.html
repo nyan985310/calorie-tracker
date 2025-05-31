@@ -280,10 +280,7 @@
 
   // 予め用意した食品（例）
   const predefinedFoods = [
-    { name: 'ご飯1杯', kcal: 250 },
-    { name: 'パン1枚', kcal: 150 },
-    { name: 'りんご1個', kcal: 80 },
-    { name: '牛乳コップ1杯', kcal: 120 },
+    { name: '', kcal: 0 },
   ];
 
   // 今日の日付を初期値セット
@@ -296,17 +293,17 @@
   calendarDate.value = formatDateToInput(new Date());
 
   // 数量セレクトに1~10までをセット
-  function initQuantityOptions() {
-    quantitySelect.innerHTML = '';
-    for (let i = 1; i <= 10; i++) {
-      const opt = document.createElement('option');
-      opt.value = i;
-      opt.textContent = i;
-      quantitySelect.appendChild(opt);
-    }
+function initQuantityOptions() {
+  quantitySelect.innerHTML = '';
+  for (let i = 1; i <= 100; i++) {
+    const value = (i * 0.1).toFixed(1);  // 0.1, 0.2, ..., 10.0
+    const opt = document.createElement('option');
+    opt.value = value;
+    opt.textContent = value;
+    quantitySelect.appendChild(opt);
   }
-  initQuantityOptions();
-
+}
+initQuantityOptions();
   // 食品セレクトを更新（プリセット＋カスタム）
   function updateFoodSelect() {
     const prevVal = foodSelect.value;
@@ -317,7 +314,7 @@
     defaultOpt.selected = true;
     defaultOpt.textContent = '選択してください';
     foodSelect.appendChild(defaultOpt);
-    const allFoods = [...predefinedFoods, ...customFoods];
+    const allFoods = [...customFoods];
     allFoods.forEach(f => {
       const opt = document.createElement('option');
       opt.value = f.name;
