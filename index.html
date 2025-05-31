@@ -1,277 +1,361 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>摂取カロリー記録アプリ</title>
-<link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap" rel="stylesheet" />
-<style>
-  body {
-    font-family: 'Kosugi Maru', sans-serif;
-    padding: 20px;
-    background: #fff5f8;
-    color: #4b2e2e;
-  }
-  h1, h2, h3 {
-    color: #d36b8b;
-  }
-
-  /* ヘッダーとカレンダーボタン */
-  #header {
-    position: relative;
-    display: inline-block;
-    margin-bottom: 20px;
-  }
-  #header h1 {
-    margin: 0;
-  }
-  #calendarBtn {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    font-size: 0.8em;
-    padding: 4px 10px;
-    background: #ffcad4;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    color: #4b2e2e;
-  }
-  #calendarBtn:hover {
-    background: #fbb5c4;
-  }
-
-  /* 入力フォーム2列2行レイアウト */
-  #inputForm {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto;
-    gap: 10px 15px;
-    max-width: 440px;
-    margin-bottom: 20px;
-  }
-  #inputForm input,
-  #inputForm select,
-  #inputForm button {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 8px;
-    border-radius: 10px;
-    border: 1px solid #e0b7b7;
-    font-size: 16px;
-  }
-  #inputForm button {
-    background: #ffcad4;
-    border: none;
-    border-radius: 12px;
-    box-shadow: 1px 2px 4px rgba(0,0,0,0.1);
-    color: #4b2e2e;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  #inputForm button:hover {
-    background: #fbb5c4;
-  }
-  /* ボタンは横並びに */
-  #buttonWrap {
-    grid-column: span 2;
-    display: flex;
-    gap: 10px;
-  }
-  #buttonWrap button {
-    flex: 1;
-  }
-
-  /* 記録テーブル */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    background: #fff;
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  th, td {
-    border: 1px solid #f4c2c2;
-    padding: 10px;
-    text-align: center;
-  }
-  th {
-    background: #ffe3e3;
-    color: #4b2e2e;
-  }
-
-  /* 合計表示 */
-  .summary-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 10px;
-  }
-
-  /* モーダル共通 */
-  .modal {
-    display: none;
-    position: fixed;
-    z-index: 10;
-    left: 0;
-    top: 0;
-    width: 100vw;
-    height: 100vh;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.4);
-  }
-  .modal-content {
-    background-color: #fff0f5;
-    margin: 8% auto;
-    padding: 20px;
-    border: 1px solid #f0c0c0;
-    width: 90%;
-    max-width: 480px;
-    border-radius: 10px;
-    position: relative;
-  }
-  .close {
-    color: #aaa;
-    position: absolute;
-    top: 12px;
-    right: 16px;
-    font-size: 26px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  .close:hover {
-    color: #d36b8b;
-  }
-
-  /* カレンダーモーダルのカレンダー部分 */
-  #calendarDisplay {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 5px;
-  }
-  #calendarDisplay div {
-    padding: 6px 4px;
-    text-align: center;
-    border-radius: 6px;
-    cursor: pointer;
-    user-select: none;
-  }
-  #calendarDisplay .header {
-    font-weight: bold;
-    background: #ffd3e2;
-  }
-  #calendarDisplay .date-cell {
-    background: #fff0f5;
-    border: 1px solid #f4c2c2;
-    position: relative;
-  }
-  #calendarDisplay .date-cell:hover {
-    background: #ffcad4;
-  }
-  #calendarDisplay .date-cell.today {
-    border: 2px solid #d36b8b;
-  }
-  #calendarDisplay .date-cell.has-entry::after {
-    content: attr(data-kcal) " kcal";
-    position: absolute;
-    bottom: 4px;
-    right: 4px;
-    font-size: 10px;
-    color: #d36b8b;
-    font-weight: bold;
-  }
-  #calendarDisplay .empty-cell {
-    background: transparent;
-    border: none;
-    cursor: default;
-  }
-
-  /* フード登録モーダル内 */
-  #registerModal label {
-    display: block;
-    margin-bottom: 10px;
-  }
-  #registerModal input {
-    width: 100%;
-    padding: 6px 8px;
-    margin-top: 4px;
-    border-radius: 8px;
-    border: 1px solid #e0b7b7;
-    font-size: 16px;
-  }
-  #foodListDisplay {
-    max-height: 150px;
-    overflow-y: auto;
-    padding-left: 16px;
-  }
-  #foodListDisplay li {
-    margin-bottom: 6px;
-  }
-  #foodListDisplay button {
-    margin-left: 10px;
-    background: #ff7f7f;
-    border: none;
-    border-radius: 8px;
-    padding: 2px 6px;
-    cursor: pointer;
-    color: white;
-    font-size: 14px;
-  }
-  #foodListDisplay button:hover {
-    background: #f45555;
-  }
-
-  @media (max-width: 480px) {
-    #inputForm {
-      grid-template-columns: 1fr;
-      grid-template-rows: auto auto auto auto;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>摂取カロリー記録</title>
+  <style>
+    body {
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      margin: 20px;
+      background: #f7f7f7;
+      color: #333;
     }
-    #buttonWrap {
+    h1 {
+      margin-bottom: 8px;
+      font-weight: bold;
+      font-size: 1.8em;
+    }
+    /* タイトルとカレンダー表示ボタンを縦並びに */
+    .title-container {
+      display: flex;
       flex-direction: column;
+      align-items: flex-start;
+      margin-bottom: 12px;
     }
-  }
-</style>
+    #openCalendarBtn {
+      margin-top: 6px;
+      padding: 6px 14px;
+      font-size: 0.9em;
+      cursor: pointer;
+      background-color: #48a9e6;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      transition: background-color 0.3s;
+    }
+    #openCalendarBtn:hover {
+      background-color: #357ab8;
+    }
+
+    /* 入力フォーム：2列2行のグリッド */
+    #inputForm {
+      display: grid;
+      grid-template-columns: auto 1fr auto 1fr;
+      grid-row-gap: 12px;
+      grid-column-gap: 10px;
+      align-items: center;
+      margin-bottom: 15px;
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+    /* ラベルは右寄せ・入力は左寄せ */
+    #inputForm label {
+      text-align: right;
+      padding-right: 6px;
+      font-weight: 600;
+      font-size: 0.9em;
+      user-select: none;
+    }
+    #inputForm input[type="date"],
+    #inputForm select {
+      padding: 6px 8px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    #addEntryBtn {
+      grid-column: 3 / 5;
+      justify-self: right;
+      padding: 8px 18px;
+      font-size: 1em;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    #addEntryBtn:hover {
+      background-color: #3a8d40;
+    }
+
+    /* 記録テーブル */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 12px;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 6px rgba(0,0,0,0.1);
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px 10px;
+      text-align: center;
+      font-size: 0.95em;
+    }
+    th {
+      background-color: #48a9e6;
+      color: white;
+      font-weight: 600;
+    }
+    #totalCalories {
+      font-weight: bold;
+      font-size: 1.1em;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    /* ボタン2つを左右に配置 */
+    .button-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    #clearAllBtn {
+      background-color: #e84a5f;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    #clearAllBtn:hover {
+      background-color: #b83043;
+    }
+    #openRegisterBtn {
+      background-color: #ff7f50;
+      color: white;
+      border: none;
+      border-radius: 22px;
+      padding: 10px 22px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 3px 6px rgba(255, 127, 80, 0.5);
+      transition: background-color 0.3s, box-shadow 0.3s;
+    }
+    #openRegisterBtn:hover {
+      background-color: #e05f32;
+      box-shadow: 0 6px 10px rgba(224, 95, 50, 0.8);
+    }
+
+    /* モーダル共通 */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      left: 0; top: 0; width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      overflow: auto;
+    }
+    .modal-content {
+      background-color: white;
+      margin: 40px auto;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 400px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    .close {
+      position: absolute;
+      top: 10px; right: 14px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #aaa;
+      cursor: pointer;
+      user-select: none;
+    }
+    .close:hover {
+      color: #333;
+    }
+
+    /* カレンダー表示 */
+    #calendarDisplay {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin-top: 12px;
+      user-select: none;
+    }
+    #calendarDisplay .header {
+      font-weight: 600;
+      text-align: center;
+      padding: 6px 0;
+      background-color: #48a9e6;
+      color: white;
+      border-radius: 6px;
+      font-size: 0.9em;
+    }
+    #calendarDisplay .date-cell {
+      background: #e0f0ff;
+      border-radius: 6px;
+      padding: 6px 0;
+      text-align: center;
+      cursor: pointer;
+      font-size: 0.9em;
+      position: relative;
+      transition: background-color 0.2s;
+    }
+    #calendarDisplay .date-cell.today {
+      background-color: #4caf50;
+      color: white;
+      font-weight: bold;
+    }
+    #calendarDisplay .date-cell.has-entry::after {
+      content: attr(data-kcal) " kcal";
+      position: absolute;
+      bottom: 4px;
+      right: 4px;
+      font-size: 0.75em;
+      color: #333;
+      font-weight: 600;
+      background: #fff9c4;
+      border-radius: 3px;
+      padding: 1px 4px;
+      box-shadow: 0 0 2px rgba(0,0,0,0.2);
+    }
+    #calendarDisplay .date-cell:hover {
+      background-color: #99d3ff;
+    }
+    #calendarDisplay .empty-cell {
+      background: transparent;
+      pointer-events: none;
+    }
+
+    /* フォードデータ登録モーダルのスタイル */
+    #registerModal label {
+      display: block;
+      margin-top: 12px;
+      font-weight: 600;
+      user-select: none;
+    }
+    #registerModal input[type="text"],
+    #registerModal input[type="number"] {
+      width: 100%;
+      padding: 8px;
+      margin-top: 6px;
+      box-sizing: border-box;
+      font-size: 1em;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    #registerModal button {
+      margin-top: 16px;
+      width: 100%;
+      padding: 10px;
+      font-size: 1.1em;
+      background-color: #ff7f50;
+      border: none;
+      border-radius: 22px;
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: 0 3px 6px rgba(255, 127, 80, 0.5);
+      transition: background-color 0.3s, box-shadow 0.3s;
+    }
+    #registerModal button:hover {
+      background-color: #e05f32;
+      box-shadow: 0 6px 10px rgba(224, 95, 50, 0.8);
+    }
+    #foodListDisplay li {
+      margin-top: 8px;
+      font-size: 0.95em;
+      list-style: none;
+      padding: 4px 0;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #foodListDisplay button {
+      background-color: #e84a5f;
+      border: none;
+      color: white;
+      border-radius: 8px;
+      padding: 4px 10px;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: background-color 0.3s;
+    }
+    #foodListDisplay button:hover {
+      background-color: #b83043;
+    }
+
+    /* レスポンシブ調整 */
+    @media (max-width: 480px) {
+      #inputForm {
+        grid-template-columns: auto 1fr;
+      }
+      #addEntryBtn {
+        grid-column: 1 / 3;
+        justify-self: center;
+      }
+      .button-row {
+        flex-direction: column;
+        gap: 10px;
+      }
+      #clearAllBtn, #openRegisterBtn {
+        width: 100%;
+      }
+      .title-container {
+        align-items: center;
+      }
+    }
+  </style>
 </head>
 <body>
-  <div id="header">
+
+  <div class="title-container">
     <h1>摂取カロリー記録</h1>
-    <button id="calendarBtn" onclick="openCalendarModal()">カレンダー表示</button>
+    <button id="openCalendarBtn" aria-haspopup="dialog" aria-controls="calendarModal" onclick="openCalendarModal()">カレンダー表示</button>
   </div>
 
-  <div id="inputForm">
+  <!-- 入力フォーム -->
+  <div id="inputForm" role="form" aria-label="摂取記録入力フォーム">
+    <label for="calendarDate">日付：</label>
     <input type="date" id="calendarDate" />
-    <select id="timeSelect" aria-label="時間帯">
+    <label for="timeSelect">時間：</label>
+    <select id="timeSelect" aria-label="時間帯選択">
       <option value="朝">朝</option>
       <option value="昼">昼</option>
-      <option value="夕">夕</option>
+      <option value="夜">夜</option>
       <option value="間食">間食</option>
-      <option value="就寝前">就寝前</option>
     </select>
-
-    <select id="foodSelect" aria-label="食品名"></select>
-    <select id="quantity" aria-label="数量"></select>
-
-    <div id="buttonWrap">
-      <button onclick="addEntry()">追加</button>
-      <button onclick="clearAll()">全削除</button>
-    </div>
+    <label for="foodSelect">食品名：</label>
+    <select id="foodSelect" aria-label="食品選択"></select>
+    <label for="quantity">数量：</label>
+    <select id="quantity" aria-label="数量選択"></select>
+    <button id="addEntryBtn" onclick="addEntry()" aria-label="摂取記録を追加">追加</button>
   </div>
 
-  <h2>記録されたカロリー</h2>
-  <table id="entryTable" aria-label="カロリー記録テーブル">
+  <!-- 記録テーブル -->
+  <table aria-label="摂取記録一覧" id="entryTable">
     <thead>
       <tr>
-        <th>時間</th><th>食品名</th><th>数量</th><th>カロリー</th>
+        <th>時間帯</th><th>食品名</th><th>数量</th><th>カロリー(kcal)</th>
       </tr>
     </thead>
-    <tbody></tbody>
+    <tbody>
+      <tr><td colspan="4" style="text-align:center; color:#888;">記録なし</td></tr>
+    </tbody>
   </table>
-  <div class="summary-row">
-    <h3 id="totalCalories">合計: 0 kcal</h3>
-  </div>
 
-  <button id="registerButton" onclick="openRegisterModal()">食品データ登録へ</button>
+  <div id="totalCalories">合計: 0 kcal</div>
+
+  <div class="button-row">
+    <button id="clearAllBtn" onclick="clearAll()">全削除</button>
+    <button id="openRegisterBtn" onclick="openRegisterModal()">食品データ登録へ</button>
+  </div>
 
   <!-- 食品登録モーダル -->
   <div id="registerModal" class="modal" aria-hidden="true" aria-labelledby="registerTitle" role="dialog">
@@ -303,24 +387,19 @@
   </div>
 
 <script>
-  // 初期データ、ローカルストレージキー
   const STORAGE_KEY_FOODS = 'customFoods';
   const STORAGE_KEY_ENTRIES = 'entriesByDate';
 
-  // 初期食品データ（選択してくださいはダミー）
   const defaultFoods = [{ name: '選択してください', kcal: 0 }];
   let customFoods = JSON.parse(localStorage.getItem(STORAGE_KEY_FOODS) || '[]');
   let entriesByDate = JSON.parse(localStorage.getItem(STORAGE_KEY_ENTRIES) || '{}');
 
-  // 今日の日付を yyyy-mm-dd 形式で取得
+  const $ = id => document.getElementById(id);
+
   function getTodayStr() {
     return new Date().toISOString().slice(0,10);
   }
 
-  // 要素取得ショートカット
-  const $ = id => document.getElementById(id);
-
-  // 初期化処理
   window.onload = () => {
     setToday();
     loadFoodOptions();
@@ -328,13 +407,10 @@
     renderTable();
   };
 
-  // 今日の日付をセット
   function setToday() {
-    const today = getTodayStr();
-    $('calendarDate').value = today;
+    $('calendarDate').value = getTodayStr();
   }
 
-  // 食品選択肢をセット
   function loadFoodOptions() {
     const foodSelect = $('foodSelect');
     foodSelect.innerHTML = '';
@@ -352,135 +428,130 @@
     });
   }
 
-  // 数量選択肢セット 0.1～10.0まで0.1刻み
   function loadQuantityOptions() {
-    const quantitySelect = $('quantity');
-    quantitySelect.innerHTML = '';
-    for(let i=0.1; i<=10.0; i+=0.1) {
-      const val = i.toFixed(1);
-      const option = document.createElement('option');
-      option.value = val;
-      option.textContent = val;
-      quantitySelect.appendChild(option);
+    const quantity = $('quantity');
+    quantity.innerHTML = '';
+    for(let i = 1; i <= 10; i++) {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = i + '個';
+      quantity.appendChild(opt);
     }
-    quantitySelect.value = '1.0';
   }
 
-  // 選択されている日付を取得
-  function getSelectedDate() {
-    return $('calendarDate').value;
-  }
-
-  // 追加ボタン押下
   function addEntry() {
+    const date = $('calendarDate').value;
     const time = $('timeSelect').value;
-    const foodSelect = $('foodSelect');
-    const foodName = foodSelect.value;
-    if(foodName === '選択してください') {
-      alert('食品を選択してください');
+    const foodName = $('foodSelect').value;
+    const quantity = parseInt($('quantity').value, 10);
+    if (!date) {
+      alert('日付を選択してください。');
       return;
     }
-    const kcalPer100g = Number(foodSelect.options[foodSelect.selectedIndex].dataset.kcal);
-    const quantity = Number($('quantity').value);
-    const totalKcal = Math.round(kcalPer100g * quantity);
+    if (foodName === defaultFoods[0].name) {
+      alert('食品を選択してください。');
+      return;
+    }
+    if (quantity < 1) {
+      alert('数量を選択してください。');
+      return;
+    }
+    const food = [...defaultFoods, ...customFoods].find(f => f.name === foodName);
+    if (!food) {
+      alert('食品データが見つかりません。');
+      return;
+    }
+    const kcal = Math.round(food.kcal * quantity);
 
-    const date = getSelectedDate();
-    if(!entriesByDate[date]) entriesByDate[date] = [];
-    entriesByDate[date].push({ time, name: foodName, quantity, kcal: totalKcal });
+    if (!entriesByDate[date]) entriesByDate[date] = [];
+    entriesByDate[date].push({ time, foodName, quantity, kcal });
     localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify(entriesByDate));
     renderTable();
   }
 
-  // 記録テーブルを描画
   function renderTable() {
-    const date = getSelectedDate();
+    const date = $('calendarDate').value || getTodayStr();
     const tbody = $('entryTable').querySelector('tbody');
     tbody.innerHTML = '';
 
-    const entries = entriesByDate[date] || [];
-    if(entries.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4">記録なし</td></tr>';
+    if (!entriesByDate[date] || entriesByDate[date].length === 0) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 4;
+      td.textContent = '記録なし';
+      td.style.color = '#888';
+      td.style.textAlign = 'center';
+      tr.appendChild(td);
+      tbody.appendChild(tr);
       $('totalCalories').textContent = '合計: 0 kcal';
       return;
     }
 
-    let sum = 0;
-    entries.forEach((entry, i) => {
+    let total = 0;
+    entriesByDate[date].forEach(entry => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${entry.time}</td>
-                      <td>${entry.name}</td>
-                      <td>${entry.quantity}</td>
-                      <td>${entry.kcal}</td>`;
+      ['time', 'foodName', 'quantity', 'kcal'].forEach(key => {
+        const td = document.createElement('td');
+        td.textContent = entry[key];
+        tr.appendChild(td);
+      });
       tbody.appendChild(tr);
-      sum += entry.kcal;
+      total += entry.kcal;
     });
-    $('totalCalories').textContent = `合計: ${sum} kcal`;
+    $('totalCalories').textContent = `合計: ${total} kcal`;
   }
 
-  // 全削除ボタン押下
-  function clearAll() {
-    const date = getSelectedDate();
-    if(confirm(`${date} の記録を削除しますか？`)) {
-      delete entriesByDate[date];
-      localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify(entriesByDate));
-      renderTable();
-    }
-  }
-
-  // ---- 食品登録モーダル関連 ----
-  const registerModal = $('registerModal');
-  const foodListDisplay = $('foodListDisplay');
-
+  // --- 食品登録モーダル ---
   function openRegisterModal() {
-    registerModal.style.display = 'block';
-    registerModal.setAttribute('aria-hidden', 'false');
+    $('registerModal').style.display = 'block';
+    $('registerModal').setAttribute('aria-hidden', 'false');
     renderFoodList();
   }
   function closeRegisterModal() {
-    registerModal.style.display = 'none';
-    registerModal.setAttribute('aria-hidden', 'true');
-    $('foodNameInput').value = '';
-    $('foodKcalInput').value = '';
+    $('registerModal').style.display = 'none';
+    $('registerModal').setAttribute('aria-hidden', 'true');
   }
 
-  // 食品追加
   function addFood() {
     const name = $('foodNameInput').value.trim();
-    const kcal = Number($('foodKcalInput').value);
-    if(!name) {
-      alert('食品名を入力してください');
+    const kcal = parseFloat($('foodKcalInput').value);
+    if (!name) {
+      alert('食品名を入力してください。');
       return;
     }
-    if(isNaN(kcal) || kcal <= 0) {
-      alert('カロリーは正の数で入力してください');
+    if (isNaN(kcal) || kcal <= 0) {
+      alert('カロリーは0より大きい数値を入力してください。');
       return;
     }
-    if(customFoods.find(f => f.name === name)) {
-      alert('同じ名前の食品が既にあります');
+    if (customFoods.find(f => f.name === name)) {
+      alert('すでに同じ名前の食品が登録されています。');
       return;
     }
     customFoods.push({ name, kcal });
     localStorage.setItem(STORAGE_KEY_FOODS, JSON.stringify(customFoods));
-    loadFoodOptions();
-    renderFoodList();
     $('foodNameInput').value = '';
     $('foodKcalInput').value = '';
+    loadFoodOptions();
+    renderFoodList();
   }
 
-  // 食品一覧描画
   function renderFoodList() {
-    foodListDisplay.innerHTML = '';
+    const list = $('foodListDisplay');
+    list.innerHTML = '';
     if(customFoods.length === 0) {
-      foodListDisplay.innerHTML = '<li>登録済み食品はありません</li>';
+      const li = document.createElement('li');
+      li.textContent = '登録された食品はありません。';
+      list.appendChild(li);
       return;
     }
     customFoods.forEach((food, i) => {
       const li = document.createElement('li');
-      li.textContent = `${food.name} : ${food.kcal} kcal`;
+      li.textContent = `${food.name} - ${food.kcal} kcal/100g`;
       const delBtn = document.createElement('button');
       delBtn.textContent = '削除';
+      delBtn.setAttribute('aria-label', `食品${food.name}を削除`);
       delBtn.onclick = () => {
-        if(confirm(`${food.name} を削除しますか？`)) {
+        if(confirm(`食品「${food.name}」を削除しますか？`)) {
           customFoods.splice(i, 1);
           localStorage.setItem(STORAGE_KEY_FOODS, JSON.stringify(customFoods));
           loadFoodOptions();
@@ -488,126 +559,130 @@
         }
       };
       li.appendChild(delBtn);
-      foodListDisplay.appendChild(li);
+      list.appendChild(li);
     });
   }
 
-  // モーダル閉じる時もリセット
-  window.onclick = function(event) {
-    if(event.target === registerModal) closeRegisterModal();
-    if(event.target === calendarModal) closeCalendarModal();
-  }
-
-  // ---- カレンダーモーダル関連 ----
-  const calendarModal = $('calendarModal');
-  const calendarDisplay = $('calendarDisplay');
-
-  let currentYear, currentMonth; // カレンダー表示年月
+  // --- カレンダーモーダル ---
+  let calendarYear, calendarMonth;
 
   function openCalendarModal() {
-    calendarModal.style.display = 'block';
-    calendarModal.setAttribute('aria-hidden', 'false');
+    const modal = $('calendarModal');
+    modal.style.display = 'block';
+    modal.setAttribute('aria-hidden', 'false');
     const today = new Date();
-    currentYear = today.getFullYear();
-    currentMonth = today.getMonth();
-    drawCalendar(currentYear, currentMonth);
+    calendarYear = today.getFullYear();
+    calendarMonth = today.getMonth();
+    renderCalendar();
   }
-
   function closeCalendarModal() {
-    calendarModal.style.display = 'none';
-    calendarModal.setAttribute('aria-hidden', 'true');
-    calendarDisplay.innerHTML = '';
+    const modal = $('calendarModal');
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
   }
 
-  function prevMonth() {
-    currentMonth--;
-    if(currentMonth < 0) {
-      currentMonth = 11;
-      currentYear--;
-    }
-    drawCalendar(currentYear, currentMonth);
-  }
-  function nextMonth() {
-    currentMonth++;
-    if(currentMonth > 11) {
-      currentMonth = 0;
-      currentYear++;
-    }
-    drawCalendar(currentYear, currentMonth);
-  }
+  function renderCalendar() {
+    const calendar = $('calendarDisplay');
+    calendar.innerHTML = '';
 
-  // 曜日ヘッダー
-  const weekDays = ['日','月','火','水','木','金','土'];
-
-  function drawCalendar(year, month) {
-    calendarDisplay.innerHTML = '';
     // 曜日ヘッダー
-    weekDays.forEach(day => {
-      const hd = document.createElement('div');
-      hd.textContent = day;
-      hd.className = 'header';
-      calendarDisplay.appendChild(hd);
+    const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+    weekdays.forEach(day => {
+      const div = document.createElement('div');
+      div.textContent = day;
+      div.className = 'header';
+      calendar.appendChild(div);
     });
 
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month +1, 0);
+    const firstDay = new Date(calendarYear, calendarMonth, 1);
+    const lastDay = new Date(calendarYear, calendarMonth + 1, 0);
     const firstWeekday = firstDay.getDay();
-    const lastDate = lastDay.getDate();
+    const daysInMonth = lastDay.getDate();
 
-    // 空セルを埋める（前月の余白）
-    for(let i=0; i<firstWeekday; i++) {
+    // 空白セル
+    for(let i=0; i < firstWeekday; i++) {
       const empty = document.createElement('div');
       empty.className = 'empty-cell';
-      calendarDisplay.appendChild(empty);
+      calendar.appendChild(empty);
     }
 
-    const todayStr = getTodayStr();
-
-    // 日付セル作成
-    for(let day=1; day<=lastDate; day++) {
+    // 各日のセル
+    for(let day=1; day <= daysInMonth; day++) {
       const cell = document.createElement('div');
       cell.className = 'date-cell';
-      const ymd = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-      cell.textContent = day;
 
-      // 今日の場合は強調
-      if(ymd === todayStr) {
+      const dateStr = `${calendarYear}-${String(calendarMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+
+      // 今日判定
+      const todayStr = getTodayStr();
+      if(dateStr === todayStr) {
         cell.classList.add('today');
       }
 
-      // その日のカロリー合計があれば表示
-      const entries = entriesByDate[ymd];
-      if(entries && entries.length > 0) {
-        const sum = entries.reduce((a,v) => a + v.kcal, 0);
-        cell.setAttribute('data-kcal', sum);
-        cell.classList.add('has-entry');
+      // カロリー合計取得
+      let totalKcal = 0;
+      if(entriesByDate[dateStr]) {
+        totalKcal = entriesByDate[dateStr].reduce((sum, e) => sum + e.kcal, 0);
       }
+      if(totalKcal > 0) {
+        cell.classList.add('has-entry');
+        cell.setAttribute('data-kcal', totalKcal);
+      }
+      cell.textContent = day;
 
-      // クリックしたら日付をカレンダーにセットしモーダル閉じる
-      cell.onclick = () => {
-        $('calendarDate').value = ymd;
-        closeCalendarModal();
+      // 日付クリック時に選択
+      cell.tabIndex = 0;
+      cell.setAttribute('role', 'button');
+      cell.setAttribute('aria-label', `${day}日、合計${totalKcal}kcal`);
+      cell.addEventListener('click', () => {
+        $('calendarDate').value = dateStr;
         renderTable();
-      };
+        closeCalendarModal();
+      });
+      cell.addEventListener('keydown', e => {
+        if(e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          cell.click();
+        }
+      });
 
-      calendarDisplay.appendChild(cell);
-    }
-
-    // 空セル（次月分）も埋める（見た目整える）
-    const totalCells = firstWeekday + lastDate;
-    const nextEmpty = (7 - (totalCells % 7)) % 7;
-    for(let i=0; i<nextEmpty; i++) {
-      const empty = document.createElement('div');
-      empty.className = 'empty-cell';
-      calendarDisplay.appendChild(empty);
+      calendar.appendChild(cell);
     }
   }
 
-  // 日付変更でテーブル再描画
-  $('calendarDate').addEventListener('change', () => {
-    renderTable();
-  });
+  function prevMonth() {
+    calendarMonth--;
+    if(calendarMonth < 0) {
+      calendarMonth = 11;
+      calendarYear--;
+    }
+    renderCalendar();
+  }
+
+  function nextMonth() {
+    calendarMonth++;
+    if(calendarMonth > 11) {
+      calendarMonth = 0;
+      calendarYear++;
+    }
+    renderCalendar();
+  }
+
+  // 全削除
+  function clearAll() {
+    if(confirm('すべての摂取記録を削除しますか？')) {
+      entriesByDate = {};
+      localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify(entriesByDate));
+      renderTable();
+    }
+  }
+
+  // 日付が変わったらテーブルを更新
+  $('calendarDate').addEventListener('change', renderTable);
+
+  // 時間帯、食品、数量変更は特に即時処理なし
 
 </script>
+
 </body>
 </html>
