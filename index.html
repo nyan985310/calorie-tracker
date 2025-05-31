@@ -188,8 +188,7 @@
 
   <form id="inputForm" onsubmit="return false;">
     <div class="form-row">
-      <label for="calendarDate" class="form-label">日付：</label>
-      <input type="date" id="calendarDate" required />
+      <label for="calendarDate" class="form-label">日付：</label><input type="date" id="calendarDate" required />
       <label for="timeSelect" class="form-label">時間：</label>
       <select id="timeSelect" required>
         <option value="朝">朝</option>
@@ -201,7 +200,7 @@
     </div>
     <div class="form-row">
       <label for="foodSelect" class="form-label">食品名：</label>
-      <select id="foodSelect" required>
+      <select id="foodSelect" required style="width: 100px;">
         <option value="" disabled selected>選択してください</option>
       </select>
       <label for="quantitySelect" class="form-label">数量：</label>
