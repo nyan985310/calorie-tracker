@@ -249,6 +249,9 @@
       <button id="addFoodItemBtn" style="background:#ff6666; color:#fff; border:none; padding:8px; border-radius:8px; width:100%; font-weight:600; cursor:pointer;">登録</button>
       <button id="registerCloseBtn" style="margin-top:10px; background:#ff4d4d; color:#fff; border:none; padding:6px; border-radius:6px; width:100%; font-weight:600; cursor:pointer;">閉じる</button>
       <ul id="foodListDisplay" style="margin-top:10px; color:#cc0033; font-size:0.85rem;"></ul>
+      <ul id="foodListDisplay" style="margin-top:10px; color:#cc0033; font-size:0.85rem;"></ul>
+<button id="deleteSelectedFoodsBtn" style="background:#cc0000; color:#fff; border:none; padding:8px; border-radius:8px; width:100%; font-weight:600; cursor:pointer; margin-top:8px;">選択した食品を削除</button>
+
     </div>
   </div>
 
@@ -365,9 +368,9 @@ initQuantityOptions();
     const dateKey = calendarDate.value;
     const time = timeSelect.value;
     const foodName = foodSelect.value;
-    const quantity = parseInt(quantitySelect.value, 10);
+    const quantity = parseFloat(quantitySelect.value);
     if (!dateKey || !time || !foodName || !quantity) return;
-
+ 
     // kcal取得
     let kcal = 0;
     const allFoods = [...predefinedFoods, ...customFoods];
@@ -499,18 +502,53 @@ initQuantityOptions();
   });
 
   // 食品登録リスト表示
-  function updateFoodListDisplay() {
-    foodListDisplay.innerHTML = '';
-    if (customFoods.length === 0) {
-      foodListDisplay.textContent = '登録された食品はありません。';
-      return;
-    }
-    customFoods.forEach((f,i) => {
-      const li = document.createElement('li');
-      li.textContent = `${f.name} : ${f.kcal} kcal`;
-      foodListDisplay.appendChild(li);
-    });
+function updateFoodListDisplay() {
+  foodListDisplay.innerHTML = '';
+  if (customFoods.length === 0) {
+    foodListDisplay.textContent = '登録された食品はありません。';
+    return;
   }
+  customFoods.forEach((f, i) => {
+    const li = document.createElement('li');
+    li.style.display = 'flex';
+    li.style.alignItems = 'center';
+    li.style.gap = '8px';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.dataset.index = i;
+
+    const label = document.createElement('label');
+    label.textContent = `${f.name} : ${f.kcal} kcal`;
+
+    li.appendChild(checkbox);
+    li.appendChild(label);
+    foodListDisplay.appendChild(li);
+  });
+}
+const deleteSelectedFoodsBtn = document.getElementById('deleteSelectedFoodsBtn');
+
+deleteSelectedFoodsBtn.addEventListener('click', () => {
+  // チェックされたインデックスを集める
+  const checkboxes = foodListDisplay.querySelectorAll('input[type="checkbox"]:checked');
+  if (checkboxes.length === 0) {
+    alert('削除する食品を選択してください。');
+    return;
+  }
+  if (!confirm('選択した食品を削除しますか？')) {
+    return;
+  }
+
+  // 選択されたインデックスを逆順にして削除（配列のindex崩れ防止）
+  const indices = Array.from(checkboxes).map(cb => parseInt(cb.dataset.index, 10)).sort((a,b) => b - a);
+  indices.forEach(i => {
+    customFoods.splice(i, 1);
+  });
+
+  saveCustomFoods();
+  updateFoodSelect();
+  updateFoodListDisplay();
+});
 
   // 食品追加登録
   addFoodItemBtn.addEventListener('click', () => {
