@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>摂取カロリー記録</title>
 <style>
+.calendar-nav-btn {
+  background: #ff6666;
+  color: #fff;
+  border: none;
+  padding: 1px 4px;
+  font-size: 12px;
+  border-radius: 4px;
+  width: 0px;
+}
+
   /* フォントサイズ全体を少し小さく */
   body {
     font-family: 'Arial', sans-serif;
@@ -232,7 +242,11 @@
   <!-- カレンダーモーダル -->
   <div id="calendarModal" role="dialog" aria-modal="true" aria-labelledby="calendarTitle" aria-hidden="true">
     <div id="calendarContent">
-      <h2 id="calendarTitle" style="text-align:center; margin-top:0; color:#cc0033;">カレンダー</h2>
+      <h2 id="calendarTitle" style="text-align:center ; margin-top:0; color:#cc0033;">カレンダー</h2>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+<button id="prevMonthBtn" class="calendar-nav-btn">◀</button>
+<span id="calendarMonthLabel" style="font-weight: bold; color:#cc0033; font-size:14px;"></span>
+<button id="nextMonthBtn" class="calendar-nav-btn">▶</button></div>
       <div id="calendarGrid" tabindex="0"></div>
       <button id="calendarCloseBtn">閉じる</button>
     </div>
@@ -243,7 +257,7 @@
     <div style="background:#fff; max-width:320px; margin:50px auto; padding:16px; border-radius:10px;">
       <h2 id="registerTitle" style="color:#cc0033; margin-top:0;">食品データ登録</h2>
       <label for="newFoodName" style="display:block; margin-bottom:6px;">食品名：</label>
-      <input type="text" id="newFoodName" style="width:100%; padding:6px; border:1.5px solid #ff9999; border-radius:6px; margin-bottom:10px;" />
+      <input type="text" id="newFoodName" style="width:100%; padding:6px; border:1.5px solid #ff9999; border-radius:6px; margin-bottom:10px; font-size: 16px;" />
       <label for="newFoodCalories" style="display:block; margin-bottom:6px;">カロリー(kcal)：</label>
       <input type="number" id="newFoodCalories" min="1" style="width:100%; padding:6px; border:1.5px solid #ff9999; border-radius:6px; margin-bottom:10px;" />
       <button id="addFoodItemBtn" style="background:#ff6666; color:#fff; border:none; padding:8px; border-radius:8px; width:100%; font-weight:600; cursor:pointer;">登録</button>
@@ -280,6 +294,7 @@
   // 保存データ
   let entriesByDate = JSON.parse(localStorage.getItem('entriesByDate') || '{}');
   let customFoods = JSON.parse(localStorage.getItem('customFoods') || '[]');
+  let currentCalendarDate = new Date(); // カレンダー用の現在日付
 
   // 予め用意した食品（例）
   const predefinedFoods = [
@@ -415,13 +430,28 @@ initQuantityOptions();
     calendarOpenBtn.setAttribute('aria-expanded', 'false');
   });
 
+  // 🔽 このあたりに追加
+  document.getElementById('prevMonthBtn').addEventListener('click', () => {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+    buildCalendar(formatDateToInput(currentCalendarDate));
+  });
+
+  document.getElementById('nextMonthBtn').addEventListener('click', () => {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+    buildCalendar(formatDateToInput(currentCalendarDate));
+  });
+
   // カレンダー構築
-  function buildCalendar(dateStr) {
-    const calendarGrid = document.getElementById('calendarGrid');
-    calendarGrid.innerHTML = '';
-    const dateObj = new Date(dateStr);
-    const year = dateObj.getFullYear();
-    const month = dateObj.getMonth();
+function buildCalendar(dateStr) {
+  const calendarGrid = document.getElementById('calendarGrid');
+  calendarGrid.innerHTML = '';
+  
+  currentCalendarDate = new Date(dateStr); // 追加：現在の表示月を保存
+  const year = currentCalendarDate.getFullYear();
+  const month = currentCalendarDate.getMonth();
+
+  // 月ラベル更新
+  document.getElementById('calendarMonthLabel').textContent = `${year}年 ${month + 1}月`;
 
     // 曜日見出し
     ['日','月','火','水','木','金','土'].forEach(d => {
