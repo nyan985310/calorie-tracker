@@ -148,11 +148,19 @@
     gap: 6px;
     text-align: center;
   }
-  #calendarGrid > div {
-    padding: 6px 0;
-    border-radius: 6px;
-    cursor: pointer;
-    user-select: none;
+#calendarGrid > div {
+  position: relative;
+  min-height: 48px; /* 以前より少し大きめに */
+  padding: 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
   }
   #calendarGrid > div:hover,
   #calendarGrid > div:focus {
@@ -163,14 +171,12 @@
     cursor: default;
     background: transparent;
   }
-  .kcalLabel {
-    font-size: 0.7rem;
-    color: #cc3333;
-    position: absolute;
-    right: 4px;
-    bottom: 2px;
-    font-weight: 700;
-  }
+.kcalLabel {
+  font-size: 0.7rem;
+  color: #cc3333;
+  font-weight: 700;
+  margin-top: 2px;
+}
   #calendarCloseBtn {
     margin-top: 12px;
     padding: 6px 14px;
@@ -311,7 +317,9 @@ function updateFoodListDisplay() {
 }
 
 function sortCustomFoods() {
-  customFoods.sort((a, b) => a.name.localeCompare(b.name));
+  customFoods.sort((a, b) =>
+    a.name.localeCompare(b.name, 'ja', { usage: 'sort', sensitivity: 'base' })
+  );
   saveCustomFoods();
   updateFoodListDisplay();
   updateFoodSelect();
@@ -527,7 +535,7 @@ function buildCalendar(dateStr) {
       if (dayTotal > 0) {
         const kcalLabel = document.createElement('div');
         kcalLabel.className = 'kcalLabel';
-        kcalLabel.textContent = `${dayTotal}kcal`;
+        kcalLabel.textContent = `${dayTotal}`;
         dayCell.appendChild(kcalLabel);
       }
       dayCell.addEventListener('click', () => {
