@@ -395,11 +395,13 @@ initQuantityOptions();
     let total = 0;
     entriesByDate[dateKey].forEach(({ time, food, quantity, kcal }) => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${time}</td><td>${food}</td><td>${quantity}</td><td>${kcal * quantity}</td>`;
+const calorieValue = Math.ceil(kcal * quantity * 10) / 10;
+tr.innerHTML = `<td>${time}</td><td>${food}</td><td>${quantity}</td><td>${calorieValue.toFixed(1)}</td>`;
       entryTableBody.appendChild(tr);
       total += kcal * quantity;
     });
-    totalCalories.textContent = `合計: ${total} kcal`;
+const totalRounded = Math.ceil(total * 10) / 10;
+totalCalories.textContent = `合計: ${totalRounded.toFixed(1)} kcal`;
   }
 
   // データ保存
