@@ -9,10 +9,13 @@
   background: #ff6666;
   color: #fff;
   border: none;
-  padding: 1px 4px;
+　flex-grow: 0 !important;
+  padding: 2px 6px;
   font-size: 12px;
   border-radius: 4px;
-  width: 0px;
+  cursor: pointer;
+  line-height: 1;
+　 width: auto;
 }
 
   /* フォントサイズ全体を少し小さく */
@@ -72,25 +75,51 @@
     color: #999999;
   }
 
-  /* ボタン群 */
-  .button-row {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 15px;
-  }
-  button {
-    flex-grow: 1;
-    background-color: #ff8080;
-    border: none;
-    color: white;
-    padding: 8px 0;
-    font-weight: 600;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: background-color 0.3s;
-  }
-  button:hover:not(:disabled) {
+/* 特定のボタン群のみ横に広がるように */
+.button-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px; /* ← ここを追加 */
+}
+
+.button-row button {
+  flex-grow: 1; /* 均等に広がる */
+}
+
+/* カレンダー内の月ボタン */
+.calendar-nav-btn {
+  flex-grow: 0;
+  width: auto;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+/* 登録モーダルの閉じるボタン */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#registerCloseBtn {
+  background: transparent;
+  color: #cc0000;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  margin-left: auto;
+}
+button {
+  background-color: #ff8080;
+  border: none;
+  color: white;
+  padding: 8px 0;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+}  button:hover:not(:disabled) {
     background-color: #ff4d4d;
   }
   button:disabled {
@@ -193,7 +222,16 @@
   select:invalid {
     color: #999999;
   }
-
+.day {
+  border: 1px solid #ccc;
+  padding: 8px;
+  margin: 2px;
+  min-height: 60px;
+  box-sizing: border-box;
+  position: relative;
+  background-color: #fefefe;
+  border-radius: 4px;
+}
 </style>
 </head>
 <body>
@@ -225,7 +263,7 @@
       </select>
     </div>
     <div class="button-row">
-      <button id="clearAllBtn" type="button">全削除</button>
+      <button id="clearAllBtn" type="button">全クリア</button>
       <button id="openRegisterBtn" type="button">食品データ登録</button>
       <button id="addEntryBtn" type="button" disabled>追加</button>
     </div>
@@ -260,14 +298,30 @@
 
   <!-- 食品登録モーダル -->
   <div id="registerModal" role="dialog" aria-modal="true" aria-labelledby="registerTitle" aria-hidden="true" style="display:none; position:fixed; z-index:1100; left:0;top:0;right:0;bottom:0; background: rgba(255, 200, 200, 0.9); overflow:auto;">
-    <div style="background:#fff; max-width:320px; margin:50px auto; padding:16px; border-radius:10px;">
-      <h2 id="registerTitle" style="color:#cc0033; margin-top:0;">食品データ登録</h2>
+<div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+  <h2>食品データ登録</h2>
+<button id="registerCloseBtn"
+  style="
+    font-size: 1.5em;
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 3.0em;
+    height: 1.5em;
+    line-height: 1.5em;
+    text-align: center;
+    padding: 0;
+    margin: 0;
+  "
+>
+  閉じる
+</button>
+</div>
       <label for="newFoodName" style="display:block; margin-bottom:6px;">食品名：</label>
       <input type="text" id="newFoodName" style="width:100%; padding:6px; border:1.5px solid #ff9999; border-radius:6px; margin-bottom:10px; font-size: 16px;" />
       <label for="newFoodCalories" style="display:block; margin-bottom:6px;">カロリー(kcal)：</label>
       <input type="number" id="newFoodCalories" min="1" style="width:100%; padding:6px; border:1.5px solid #ff9999; border-radius:6px; margin-bottom:10px; font-size: 16px;" />
       <button id="addFoodItemBtn" style="background:#ff6666; color:#fff; border:none; padding:8px; border-radius:8px; width:100%; font-weight:600; cursor:pointer;">登録</button>
-      <button id="registerCloseBtn" style="margin-top:10px; background:#ff4d4d; color:#fff; border:none; padding:6px; border-radius:6px; width:100%; font-weight:600; cursor:pointer;">閉じる</button>
 <button id="sortFoodsBtn" style="background:#cc0000; color:#fff; border:none; padding:8px; border-radius:8px; width:100%; font-weight:600; cursor:pointer; margin-top:8px;">並び替え</button>
       <ul id="foodListDisplay" style="margin-top:10px; color:#cc0033; font-size:0.85rem;"></ul>
       <ul id="foodListDisplay" style="margin-top:10px; color:#cc0033; font-size:0.85rem;"></ul>
@@ -349,6 +403,10 @@ function initQuantityOptions() {
     const opt = document.createElement('option');
     opt.value = value;
     opt.textContent = value;
+    if (value === '1.0') {
+      opt.selected = true;  // 1.0 をデフォルト選択
+    }
+
     quantitySelect.appendChild(opt);
   }
 }
@@ -393,13 +451,26 @@ initQuantityOptions();
       return;
     }
     let total = 0;
-    entriesByDate[dateKey].forEach(({ time, food, quantity, kcal }) => {
-      const tr = document.createElement('tr');
-const calorieValue = Math.ceil(kcal * quantity);
-tr.innerHTML = `<td>${time}</td><td>${food}</td><td>${quantity}</td><td>${calorieValue} kcal</td>`;
-      entryTableBody.appendChild(tr);
-      total += kcal * quantity;
-    });
+entriesByDate[dateKey].forEach((entry, index) => {
+  const tr = document.createElement('tr');
+  const calorieValue = Math.ceil(entry.kcal * entry.quantity);
+  tr.innerHTML = `<td>${entry.time}</td><td>${entry.food}</td><td>${entry.quantity}</td><td>${calorieValue} kcal</td>`;
+
+  // 行をクリックしたらその行を削除
+  tr.addEventListener('click', () => {
+    if (confirm(`「${entry.food}」を削除しますか？`)) {
+      entriesByDate[dateKey].splice(index, 1);
+      if (entriesByDate[dateKey].length === 0) {
+        delete entriesByDate[dateKey];
+      }
+      saveEntries();
+      updateEntryTable();
+    }
+  });
+
+  entryTableBody.appendChild(tr);
+  total += entry.kcal * entry.quantity;
+});
 const totalRounded = Math.ceil(total);
 totalCalories.textContent = `合計: ${totalRounded} kcal`;
   }
@@ -479,78 +550,71 @@ totalCalories.textContent = `合計: ${totalRounded} kcal`;
 function buildCalendar(dateStr) {
   const calendarGrid = document.getElementById('calendarGrid');
   calendarGrid.innerHTML = '';
-  
-  currentCalendarDate = new Date(dateStr); // 追加：現在の表示月を保存
+
+  currentCalendarDate = new Date(dateStr); // 表示中の年月日を更新
   const year = currentCalendarDate.getFullYear();
   const month = currentCalendarDate.getMonth();
 
-  // 月ラベル更新
+  // 月表示更新
   document.getElementById('calendarMonthLabel').textContent = `${year}年 ${month + 1}月`;
 
-    // 曜日見出し
-    ['日','月','火','水','木','金','土'].forEach(d => {
-      const dEl = document.createElement('div');
-      dEl.textContent = d;
-      dEl.style.fontWeight = 'bold';
-      calendarGrid.appendChild(dEl);
+  // 曜日見出し追加（日〜土）
+  ['日', '月', '火', '水', '木', '金', '土'].forEach(dayName => {
+    const dayEl = document.createElement('div');
+    dayEl.textContent = dayName;
+    dayEl.style.fontWeight = 'bold';
+    calendarGrid.appendChild(dayEl);
+  });
+
+  // 月初めの曜日
+  const firstDay = new Date(year, month, 1);
+  const startDay = firstDay.getDay();
+
+  // 月末日（その月の日数）
+  const lastDate = new Date(year, month + 1, 0).getDate();
+
+  // 空白セルを先頭に配置（startDay分）
+  for (let i = 0; i < startDay; i++) {
+    const emptyCell = document.createElement('div');
+    emptyCell.classList.add('empty');
+    calendarGrid.appendChild(emptyCell);
+  }
+
+  // 日付セル生成
+  for (let day = 1; day <= lastDate; day++) {
+    const dateCell = document.createElement('div');
+　　dateCell.classList.add('day'); 
+    dateCell.tabIndex = 0; // キーボードフォーカス可能
+    dateCell.textContent = day;
+
+    // 該当日付のカロリー合計があれば表示
+    const key = formatDateToInput(new Date(year, month, day));
+    let dayTotal = 0;
+    if (entriesByDate[key]) {
+      entriesByDate[key].forEach(entry => {
+        dayTotal += entry.kcal * entry.quantity;
+      });
+    }
+    if (dayTotal > 0) {
+      const kcalLabel = document.createElement('div');
+      kcalLabel.className = 'kcalLabel';
+      kcalLabel.textContent = `${Math.ceil(dayTotal)} kcal`;
+      dateCell.appendChild(kcalLabel);
+    }
+
+    // クリックで日付選択してカレンダー閉じる
+    dateCell.addEventListener('click', () => {
+      calendarDate.value = key;
+      updateEntryTable();
+      calendarModal.style.display = 'none';
+      calendarModal.setAttribute('aria-hidden', 'true');
+      calendarOpenBtn.setAttribute('aria-expanded', 'false');
+      calendarOpenBtn.focus();
     });
 
-    // 月初め曜日
-    const firstDay = new Date(year, month, 1);
-    const startDay = firstDay.getDay();
-
-    // 月末日
-    const lastDate = new Date(year, month+1, 0).getDate();
-
-    // 空白セル
-    for (let i=0; i<startDay; i++) {
-      const emptyCell = document.createElement('div');
-      emptyCell.classList.add('empty');
-      calendarGrid.appendChild(emptyCell);
-    }
-
-    // 日付セル生成
-    for (let d=1; d<=lastDate; d++) {
-      const dayCell = document.createElement('div');
-      dayCell.tabIndex = 0;
-      dayCell.style.position = 'relative';
-      dayCell.style.border = '1px solid #ff9999';
-      dayCell.style.borderRadius = '6px';
-
-      const isToday = (year === new Date().getFullYear() &&
-                      month === new Date().getMonth() &&
-                      d === new Date().getDate());
-      if (isToday) {
-        dayCell.style.backgroundColor = '#ffcccc';
-        dayCell.style.fontWeight = '700';
-      }
-
-      dayCell.textContent = d;
-
-      // その日の日付文字列
-      const dayStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      // カロリー合計計算
-      let dayTotal = 0;
-      if (entriesByDate[dayStr]) {
-        entriesByDate[dayStr].forEach(e => { dayTotal += e.kcal * e.quantity; });
-      }
-      if (dayTotal > 0) {
-        const kcalLabel = document.createElement('div');
-        kcalLabel.className = 'kcalLabel';
-        kcalLabel.textContent = `${dayTotal}`;
-        dayCell.appendChild(kcalLabel);
-      }
-      dayCell.addEventListener('click', () => {
-        calendarDate.value = dayStr;
-        updateEntryTable();
-        calendarModal.style.display = 'none';
-        calendarModal.setAttribute('aria-hidden', 'true');
-        calendarOpenBtn.setAttribute('aria-expanded', 'false');
-      });
-
-      calendarGrid.appendChild(dayCell);
-    }
+    calendarGrid.appendChild(dateCell);
   }
+}
 
   // 食品登録モーダル開閉
   openRegisterBtn.addEventListener('click', () => {
