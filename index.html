@@ -233,7 +233,10 @@ button {
   border-radius: 4px;
 }
 #registerModal {
-  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
 }
 
 #registerContent {
@@ -245,6 +248,10 @@ button {
   padding: 16px;
   overflow-y: auto;
   box-sizing: border-box;
+
+  /* モバイル向けに強制スクロール制御 */
+  display: flex;
+  flex-direction: column;
 }
 
 </style>
