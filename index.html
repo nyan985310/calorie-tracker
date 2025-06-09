@@ -8,14 +8,14 @@
 .calendar-nav-btn {
   background: #ff6666;
   color: #fff;
-  border: none;
-　flex-grow: 0 !important;
+border: none;
+ flex-grow: 0 !important; /* ←この全角スペースは半角に修正 */
   padding: 2px 6px;
   font-size: 12px;
   border-radius: 4px;
   cursor: pointer;
   line-height: 1;
-　 width: auto;
+  width: auto;
 }
 
   /* フォントサイズ全体を少し小さく */
@@ -232,6 +232,21 @@ button {
   background-color: #fefefe;
   border-radius: 4px;
 }
+#registerModal {
+  padding: 10px;
+}
+
+#registerContent {
+  max-width: 90vw;
+  max-height: 90vh;
+  margin: 5vh auto;
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
 </style>
 </head>
 <body>
@@ -248,7 +263,7 @@ button {
         <option value="朝">朝</option>
         <option value="昼">昼</option>
         <option value="夕">夕</option>
-　　　　<option value="就寝前">就寝前</option>
+    <option value="就寝前">就寝前</option>
         <option value="間食">間食</option>
       </select>
     </div>
@@ -323,7 +338,6 @@ button {
       <input type="number" id="newFoodCalories" min="1" style="width:100%; padding:6px; border:1.5px solid #ff9999; border-radius:6px; margin-bottom:10px; font-size: 16px;" />
       <button id="addFoodItemBtn" style="background:#ff6666; color:#fff; border:none; padding:8px; border-radius:8px; width:100%; font-weight:600; cursor:pointer;">登録</button>
 <button id="sortFoodsBtn" style="background:#cc0000; color:#fff; border:none; padding:8px; border-radius:8px; width:100%; font-weight:600; cursor:pointer; margin-top:8px;">並び替え</button>
-      <ul id="foodListDisplay" style="margin-top:10px; color:#cc0033; font-size:0.85rem;"></ul>
       <ul id="foodListDisplay" style="margin-top:10px; color:#cc0033; font-size:0.85rem;"></ul>
 <button id="deleteSelectedFoodsBtn" style="background:#cc0000; color:#fff; border:none; padding:8px; border-radius:8px; width:100%; font-weight:600; cursor:pointer; margin-top:8px;">選択した食品を削除</button>
 
@@ -583,7 +597,7 @@ function buildCalendar(dateStr) {
   // 日付セル生成
   for (let day = 1; day <= lastDate; day++) {
     const dateCell = document.createElement('div');
-　　dateCell.classList.add('day'); 
+  dateCell.classList.add('day'); 
     dateCell.tabIndex = 0; // キーボードフォーカス可能
     dateCell.textContent = day;
 
