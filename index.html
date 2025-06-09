@@ -233,20 +233,28 @@ button {
   border-radius: 4px;
 }
 #registerModal {
+  position: fixed;
+  inset: 0; /* top, right, bottom, left をまとめて指定 */
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  background-color: rgba(0, 0, 0, 0.5); /* 背景を薄暗く */
+  z-index: 1100;
+  padding: 16px; /* 画面端との余白確保 */
+  box-sizing: border-box;
+  overflow: auto;
 }
+
 #registerContent {
-  max-width: 70vw;
-  max-height: 70vh;
-  margin: 5vh auto;
-  background: white;
-  border-radius: 10px;
-  padding: 16px;
+  width: 100%;
+  max-width: 400px; /* iPhone15 縦向きの幅に合わせて */
+  max-height: 90vh;
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 20px;
   overflow-y: auto;
   box-sizing: border-box;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 </style>
