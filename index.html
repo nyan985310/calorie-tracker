@@ -234,25 +234,26 @@ button {
 }
 #registerModal {
   position: fixed;
-  inset: 0; /* top, right, bottom, left をまとめて指定 */
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(0, 0, 0, 0.5); /* 背景を薄暗く */
+  background-color: rgba(0, 0, 0, 0.5);
   z-index: 1100;
-  padding: 16px; /* 画面端との余白確保 */
+  padding: 16px;
   box-sizing: border-box;
-  overflow: auto;
+  overflow: hidden; /* ←変更ポイント */
 }
 
 #registerContent {
   width: 100%;
-  max-width: 450px; /* iPhone15 縦向きの幅に合わせて */
+  max-width: 450px;
   max-height: 90vh;
   background-color: #fff;
   border-radius: 12px;
   padding: 20px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* ←追加 */
   box-sizing: border-box;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
