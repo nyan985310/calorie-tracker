@@ -415,14 +415,39 @@ sortFoodsBtn.addEventListener('click', () => {
     updateFoodListDisplay(); // 食品リストを表示更新
   }
 
-function updateFoodListDisplay() {
-  foodListDisplay.innerHTML = '';
-  customFoods.forEach(food => {
-    const li = document.createElement('li');
-    li.textContent = `${food.name} (${food.kcal} kcal)`;
-    foodListDisplay.appendChild(li);
-  });
-}
+    // 食品名の入力に基づいて候補を表示
+    newFoodName.addEventListener('input', () => {
+        const query = newFoodName.value.toLowerCase();
+        const filteredFoods = customFoods.filter(food => food.name.toLowerCase().includes(query));
+        updateFoodListDisplay(filteredFoods);
+    });
+
+    function updateFoodListDisplay(filteredFoods = customFoods) {
+        foodListDisplay.innerHTML = '';
+        if (filteredFoods.length === 0) {
+            foodListDisplay.textContent = '登録された食品はありません。';
+            return;
+        }
+        filteredFoods.forEach((f, i) => {
+            const li = document.createElement('li');
+            li.style.display = 'flex';
+            li.style.alignItems = 'center';
+            li.style.gap = '8px';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.dataset.index = i;
+
+            const label = document.createElement('label');
+            label.textContent = `${f.name} : ${f.kcal} kcal`;
+
+            li.appendChild(checkbox);
+            li.appendChild(label);
+            foodListDisplay.appendChild(li);
+        });
+    }
+
+
 
 function sortCustomFoods() {
   customFoods.sort((a, b) =>
@@ -674,6 +699,7 @@ function buildCalendar(dateStr) {
   openRegisterBtn.addEventListener('click', () => {
     registerModal.style.display = 'block';
     registerModal.setAttribute('aria-hidden', 'false');
+　　registerModal.removeAttribute('inert'); // inert属性を削除
     newFoodName.value = '';
     newFoodCalories.value = '';
     updateFoodListDisplay();
@@ -681,6 +707,10 @@ function buildCalendar(dateStr) {
   registerCloseBtn.addEventListener('click', () => {
     registerModal.style.display = 'none';
     registerModal.setAttribute('aria-hidden', 'true');
+　　registerModal.setAttribute('inert', 'true'); // inert属性を追加
+    // フォーカスをカレンダーボタンに戻す
+    calendarOpenBtn.focus();
+
   });
 
   // 食品登録リスト表示
