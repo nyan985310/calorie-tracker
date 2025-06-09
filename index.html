@@ -357,6 +357,25 @@ button {
   </div>
 
 <script>
+async function fetchAndParseCSV() {
+    const response = await fetch('https://raw.githubusercontent.com/nyan985310/calorie-tracker/refs/heads/main/%E3%82%AB%E3%83%AD%E3%83%AA%E3%83%BC%E8%A1%A8.csv'); // ここにCSVのURLを入れる
+    const text = await response.text();
+    const foods = parseCSV(text);
+    return foods;
+}
+
+function parseCSV(text) {
+    const lines = text.split('\n');
+    const foods = [];
+    for (const line of lines) {
+        const [id, , foodName, kcal] = line.split(',');
+        if (foodName && kcal) {
+            foods.push({ name: foodName.trim(), kcal: parseInt(kcal.trim(), 10) });
+        }
+    }
+    return foods;
+}
+
 (() => {
   // DOM要素取得
   const calendarOpenBtn = document.getElementById('calendarOpenBtn');
@@ -386,6 +405,15 @@ sortFoodsBtn.addEventListener('click', () => {
   // 保存データ
   let entriesByDate = JSON.parse(localStorage.getItem('entriesByDate') || '{}');
   let customFoods = JSON.parse(localStorage.getItem('customFoods') || '[]');
+
+  // CSVから食品データを取得
+  async function initializeFoods() {
+    const fetchedFoods = await fetchAndParseCSV();
+    customFoods = [...customFoods, ...fetchedFoods]; // 既存のカスタム食品とマージ
+    saveCustomFoods(); // ローカルストレージに保存
+    updateFoodSelect(); // 食品セレクトを更新
+    updateFoodListDisplay(); // 食品リストを表示更新
+  }
 
 function updateFoodListDisplay() {
   foodListDisplay.innerHTML = '';
@@ -725,6 +753,12 @@ deleteSelectedFoodsBtn.addEventListener('click', () => {
     newFoodCalories.value = '';
     newFoodName.focus();
   });
+
+  // アプリ初期化時に食品データを取得
+  document.addEventListener('DOMContentLoaded', async () => {
+    await initializeFoods(); // CSVから食品データを取得
+  });
+
 
 })();
 </script>
