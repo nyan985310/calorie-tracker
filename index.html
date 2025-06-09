@@ -242,18 +242,18 @@ button {
   z-index: 1100;
   padding: 16px;
   box-sizing: border-box;
-  overflow: hidden; /* ←変更ポイント */
+  overflow: hidden;
 }
 
 #registerContent {
   width: 100%;
-  max-width: 450px;
+  max-width: clamp(320px, 90vw, 500px); /* 最小320px, 最大500px, 通常90%画面幅 */
   max-height: 90vh;
   background-color: #fff;
   border-radius: 12px;
-  padding: 20px;
+  padding: clamp(12px, 4vw, 24px); /* 小画面では詰まりすぎず、大画面ではゆったり */
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch; /* ←追加 */
+  -webkit-overflow-scrolling: touch;
   box-sizing: border-box;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
