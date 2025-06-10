@@ -626,6 +626,12 @@ initializeFoods().then(() => {
     entriesByDate[dateKey].push({ time, food: foodName, quantity, kcal: foodData.kcal });
     saveEntries();
     updateEntryTable();
+
+    foodInput.value = '';
+    quantitySelect.value = '1.0';
+
+    checkFormValid();
+
   });
 
 function checkFormValid() {
