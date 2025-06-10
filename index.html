@@ -300,6 +300,7 @@ button {
 <div class="form-row" style="position:relative;">
   <label for="foodInput" class="form-label">食品名：</label>
   <input type="text" id="foodInput" autocomplete="off" style="width: 200px;" required />
+  <div id="suggestionBox" style="border:1px solid #ccc; max-height:150px; overflow-y:auto; background:#fff; position:absolute; z-index:1000; display:none;"></div>
       <label for="quantitySelect" class="form-label">数量：</label>
       <select id="quantitySelect" required>
         <!-- 数量1~10 -->
