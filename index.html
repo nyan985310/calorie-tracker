@@ -71,6 +71,14 @@ border: none;
     border-radius: 5px;
     font-size: 0.95rem;
   }
+input[type="text"] {
+  flex-grow: 1;
+  padding: 4px 6px;
+  border: 1.5px solid #ff9999;
+  border-radius: 5px;
+  font-size: 0.95rem;
+}
+
   select:invalid {
     color: #999999;
   }
@@ -278,11 +286,10 @@ button {
         <option value="間食">間食</option>
       </select>
     </div>
-    <div class="form-row">
-      <label for="foodSelect" class="form-label">食品名：</label>
-      <select id="foodSelect" required style="width: 100px;">
-        <option value="" disabled selected>選択してください</option>
-      </select>
+<div class="form-row" style="position:relative;">
+  <label for="foodInput" class="form-label">食品名：</label>
+  <input type="text" id="foodInput" autocomplete="off" style="width: 400px;" required />
+  <div id="suggestionBox" style="border:1px solid #ccc; max-height:150px; overflow-y:auto; background:#fff; position:absolute; z-index:1000; display:none;"></div>
       <label for="quantitySelect" class="form-label">数量：</label>
       <select id="quantitySelect" required>
         <!-- 数量1~10 -->
@@ -357,16 +364,24 @@ button {
   </div>
 
 <script>
+async function fetchAndParseCSV() {
+  const response = await fetch('https://raw.githubusercontent.com/nyan985310/calorie-tracker/refs/heads/main/%E3%82%AB%E3%83%AD%E3%83%AA%E3%83%BC%E8%A1%A8.csv');
+  const text = await response.text();
+  return parseCSV(text);
+}
+function parseCSV(text) {
+  return text.split('\n').map(line => {
+    const [id, name, kcal] = line.split(',');
+    return name && kcal ? { name: name.trim(), kcal: parseInt(kcal, 10) } : null;
+  }).filter(x => x);
+}
 (() => {
-  // DOM要素取得
   const calendarOpenBtn = document.getElementById('calendarOpenBtn');
   const calendarModal = document.getElementById('calendarModal');
   const calendarCloseBtn = document.getElementById('calendarCloseBtn');
   const calendarDate = document.getElementById('calendarDate');
   const timeSelect = document.getElementById('timeSelect');
-  const foodSelect = document.getElementById('foodSelect');
   const quantitySelect = document.getElementById('quantitySelect');
-  const addEntryBtn = document.getElementById('addEntryBtn');
   const clearAllBtn = document.getElementById('clearAllBtn');
   const openRegisterBtn = document.getElementById('openRegisterBtn');
   const entryTableBody = document.getElementById('entryTableBody');
@@ -378,97 +393,174 @@ button {
   const newFoodCalories = document.getElementById('newFoodCalories');
   const foodListDisplay = document.getElementById('foodListDisplay');
   const sortFoodsBtn = document.getElementById('sortFoodsBtn');
+  const foodInput = document.getElementById('foodInput');
+  const suggestionBox = document.getElementById('suggestionBox');
+  const addEntryBtn = document.getElementById('addEntryBtn');
+  const deleteSelectedFoodsBtn = document.getElementById('deleteSelectedFoodsBtn');
+  const prevMonthBtn = document.getElementById('prevMonthBtn');
+  const nextMonthBtn = document.getElementById('nextMonthBtn');
+  const calendarGrid = document.getElementById('calendarGrid');
+  const calendarMonthLabel = document.getElementById('calendarMonthLabel');
 
-sortFoodsBtn.addEventListener('click', () => {
-  sortCustomFoods();
-});
-
-  // 保存データ
   let entriesByDate = JSON.parse(localStorage.getItem('entriesByDate') || '{}');
   let customFoods = JSON.parse(localStorage.getItem('customFoods') || '[]');
+  let csvFoods = [];
 
-function updateFoodListDisplay() {
-  foodListDisplay.innerHTML = '';
-  customFoods.forEach(food => {
-    const li = document.createElement('li');
-    li.textContent = `${food.name} (${food.kcal} kcal)`;
-    foodListDisplay.appendChild(li);
+function setupSuggestion(inputElement, onSelect) {
+  inputElement.addEventListener('input', () => {
+    const q = inputElement.value.trim().toLowerCase();
+    suggestionBox.innerHTML = '';
+
+    // foodInput以外では候補表示を無効化
+    if (inputElement.id !== 'foodInput') {
+      suggestionBox.style.display = 'none';
+      return;
+    }
+
+    if (!q) {
+      suggestionBox.style.display = 'none';
+      return;
+    }
+
+    const matches = customFoods.concat(csvFoods)
+      .filter(f => f.name.toLowerCase().includes(q)).slice(0, 10);
+
+    if (matches.length === 0) {
+      suggestionBox.style.display = 'none';
+      return;
+    }
+
+    matches.forEach(f => {
+      const d = document.createElement('div');
+      d.textContent = `${f.name} (${f.kcal} kcal)`;
+      d.style.padding = '4px';
+      d.style.cursor = 'pointer';
+d.addEventListener('click', () => {
+  inputElement.value = f.name;
+  suggestionBox.style.display = 'none';
+  if (onSelect) onSelect(f);
+  checkFormValid(); // ★追加
+});
+      suggestionBox.appendChild(d);
+    });
+    suggestionBox.style.display = 'block';
   });
 }
 
-function sortCustomFoods() {
-  customFoods.sort((a, b) =>
-    a.name.localeCompare(b.name, 'ja', { usage: 'sort', sensitivity: 'base' })
-  );
+foodInput.addEventListener('blur', () => {
+  setTimeout(() => {
+    suggestionBox.style.display = 'none';
+    checkFormValid(); 
+  }, 200);
+});
+
+async function initializeFoods() {
+  csvFoods = await fetchAndParseCSV();
   saveCustomFoods();
-  updateFoodListDisplay();
-  updateFoodSelect();
 }
+initializeFoods().then(() => {
+  setupSuggestion(foodInput);
 
-  let currentCalendarDate = new Date(); // カレンダー用の現在日付
+  foodInput.addEventListener('input', checkFormValid);
+  quantitySelect.addEventListener('change', checkFormValid);
+  timeSelect.addEventListener('change', checkFormValid);
+  calendarDate.addEventListener('change', checkFormValid);
 
-  // 予め用意した食品（例）
-  const predefinedFoods = [
-    { name: '', kcal: 0 },
-  ];
+  checkFormValid(); // 初期状態もチェック
+});
 
-  // 今日の日付を初期値セット
+  function saveEntries() {
+    localStorage.setItem('entriesByDate', JSON.stringify(entriesByDate));
+  }
+  function saveCustomFoods() {
+    localStorage.setItem('customFoods', JSON.stringify(customFoods));
+  }
+
+  function updateFoodListDisplay() {
+    foodListDisplay.innerHTML = '';
+    if (customFoods.length === 0) {
+      foodListDisplay.textContent = '登録された食品はありません。';
+      return;
+    }
+    customFoods.filter(f => f.isCustom !== false)
+            .forEach((f, i) => {
+      const li = document.createElement('li');
+      li.style.display = 'flex'; li.style.gap = '8px';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.dataset.index = i;
+      const lbl = document.createElement('label');
+      lbl.textContent = `${f.name} : ${f.kcal} kcal`;
+      li.append(cb, lbl);
+      foodListDisplay.appendChild(li);
+    });
+  }
+
+  sortFoodsBtn.addEventListener('click', () => {
+    customFoods.sort((a,b) => a.name.localeCompare(b.name, 'ja'));
+    saveCustomFoods(); updateFoodListDisplay();
+  });
+
+  deleteSelectedFoodsBtn.addEventListener('click', () => {
+    const checked = foodListDisplay.querySelectorAll('input:checked');
+    if (checked.length === 0) return alert('選択なし');
+    if (!confirm('削除しますか？')) return;
+    [...checked]
+      .map(cb => parseInt(cb.dataset.index))
+      .sort((a,b) => b - a)
+      .forEach(i => customFoods.splice(i,1));
+    saveCustomFoods(); updateFoodListDisplay();
+  });
+
+  openRegisterBtn.addEventListener('click', () => {
+    registerModal.style.display = 'block';
+    registerModal.removeAttribute('aria-hidden');
+    newFoodName.value = '';
+    newFoodCalories.value = '';
+    updateFoodListDisplay();
+  });
+  registerCloseBtn.addEventListener('click', () => {
+    registerModal.style.display = 'none';
+    registerModal.setAttribute('aria-hidden', 'true');
+    openRegisterBtn.focus();
+  });
+
+  addFoodItemBtn.addEventListener('click', () => {
+    const name = newFoodName.value.trim();
+    const kcal = parseInt(newFoodCalories.value,10);
+    if (!name || isNaN(kcal) || kcal<=0) return alert('正しく入力を');
+    if (customFoods.some(f=> f.name===name)) return alert('重複');
+    customFoods.push({ name, kcal, isCustom: true });
+    saveCustomFoods(); updateFoodListDisplay();
+    newFoodName.value = ''; newFoodCalories.value = '';
+  });
+
+
+  let currentCalendarDate = new Date();
+
+  // 今日の日付をinput[type=date]の値形式に整形
   function formatDateToInput(d) {
     const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2,'0');
-    const day = String(d.getDate()).padStart(2,'0');
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
   }
   calendarDate.value = formatDateToInput(new Date());
 
-  // 数量セレクトに1~10までをセット
-function initQuantityOptions() {
-  quantitySelect.innerHTML = '';
-  for (let i = 1; i <= 100; i++) {
-    const value = (i * 0.1).toFixed(1);  // 0.1, 0.2, ..., 10.0
-    const opt = document.createElement('option');
-    opt.value = value;
-    opt.textContent = value;
-    if (value === '1.0') {
-      opt.selected = true;  // 1.0 をデフォルト選択
-    }
-
-    quantitySelect.appendChild(opt);
-  }
-}
-initQuantityOptions();
-  // 食品セレクトを更新（プリセット＋カスタム）
-  function updateFoodSelect() {
-    const prevVal = foodSelect.value;
-    foodSelect.innerHTML = '';
-    const defaultOpt = document.createElement('option');
-    defaultOpt.value = '';
-    defaultOpt.disabled = true;
-    defaultOpt.selected = true;
-    defaultOpt.textContent = '選択してください';
-    foodSelect.appendChild(defaultOpt);
-
-    const allFoods = [...customFoods];
-    allFoods.forEach(f => {
+  // 数量選択肢初期化（0.1〜10.0）
+  function initQuantityOptions() {
+    quantitySelect.innerHTML = '';
+    for (let i = 1; i <= 100; i++) {
+      const value = (i * 0.1).toFixed(1);
       const opt = document.createElement('option');
-      opt.value = f.name;
-      opt.textContent = f.name;
-      foodSelect.appendChild(opt);
-    });
-    if ([...foodSelect.options].some(o => o.value === prevVal)) {
-      foodSelect.value = prevVal;
+      opt.value = value;
+      opt.textContent = value;
+      if (value === '1.0') opt.selected = true;
+      quantitySelect.appendChild(opt);
     }
-    checkAddButtonState();
   }
-  updateFoodSelect();
+  initQuantityOptions();
 
-  // 追加ボタン活性判定（食品名選択必須）
-  function checkAddButtonState() {
-    addEntryBtn.disabled = foodSelect.value === '';
-  }
-  foodSelect.addEventListener('change', checkAddButtonState);
-
-  // 登録データ表示更新
+  // 登録済みエントリーテーブル更新
   function updateEntryTable() {
     const dateKey = calendarDate.value;
     entryTableBody.innerHTML = '';
@@ -477,31 +569,29 @@ initQuantityOptions();
       return;
     }
     let total = 0;
-entriesByDate[dateKey].forEach((entry, index) => {
-  const tr = document.createElement('tr');
-  const calorieValue = Math.ceil(entry.kcal * entry.quantity);
-  tr.innerHTML = `<td>${entry.time}</td><td>${entry.food}</td><td>${entry.quantity}</td><td>${calorieValue} kcal</td>`;
+    entriesByDate[dateKey].forEach((entry, index) => {
+      const tr = document.createElement('tr');
+      const calorieValue = Math.ceil(entry.kcal * entry.quantity);
+      tr.innerHTML = `<td>${entry.time}</td><td>${entry.food}</td><td>${entry.quantity}</td><td>${calorieValue} kcal</td>`;
 
-  // 行をクリックしたらその行を削除
-  tr.addEventListener('click', () => {
-    if (confirm(`「${entry.food}」を削除しますか？`)) {
-      entriesByDate[dateKey].splice(index, 1);
-      if (entriesByDate[dateKey].length === 0) {
-        delete entriesByDate[dateKey];
-      }
-      saveEntries();
-      updateEntryTable();
-    }
-  });
+      tr.addEventListener('click', () => {
+        if (confirm(`「${entry.food}」を削除しますか？`)) {
+          entriesByDate[dateKey].splice(index, 1);
+          if (entriesByDate[dateKey].length === 0) {
+            delete entriesByDate[dateKey];
+          }
+          saveEntries();
+          updateEntryTable();
+        }
+      });
 
-  entryTableBody.appendChild(tr);
-  total += entry.kcal * entry.quantity;
-});
-const totalRounded = Math.ceil(total);
-totalCalories.textContent = `合計: ${totalRounded} kcal`;
+      entryTableBody.appendChild(tr);
+      total += entry.kcal * entry.quantity;
+    });
+    totalCalories.textContent = `合計: ${Math.ceil(total)} kcal`;
   }
 
-  // データ保存
+  // localStorage保存
   function saveEntries() {
     localStorage.setItem('entriesByDate', JSON.stringify(entriesByDate));
   }
@@ -509,43 +599,56 @@ totalCalories.textContent = `合計: ${totalRounded} kcal`;
     localStorage.setItem('customFoods', JSON.stringify(customFoods));
   }
 
-  // 追加ボタン処理
+  // 追加ボタン押下処理
   addEntryBtn.addEventListener('click', () => {
     const dateKey = calendarDate.value;
     const time = timeSelect.value;
-    const foodName = foodSelect.value;
+    const foodName = foodInput.value;
     const quantity = parseFloat(quantitySelect.value);
     if (!dateKey || !time || !foodName || !quantity) return;
- 
-    // kcal取得
-    let kcal = 0;
-    const allFoods = [...predefinedFoods, ...customFoods];
-    const foodData = allFoods.find(f => f.name === foodName);
+
+    const foodData = customFoods.concat(csvFoods).find(f => f.name === foodName);
+
     if (!foodData) return;
-    kcal = foodData.kcal;
 
     if (!entriesByDate[dateKey]) entriesByDate[dateKey] = [];
-    entriesByDate[dateKey].push({ time, food: foodName, quantity, kcal });
+    entriesByDate[dateKey].push({ time, food: foodName, quantity, kcal: foodData.kcal });
     saveEntries();
     updateEntryTable();
   });
 
-  // 全削除ボタン処理
+function checkFormValid() {
+  const foodName = foodInput.value.trim();
+  const quantity = parseFloat(quantitySelect.value);
+  const time = timeSelect.value;
+  const date = calendarDate.value;
+
+  const foundFood = customFoods.concat(csvFoods).find(f => f.name === foodName);
+
+  console.log('チェック:', { date, time, foodName, quantity, foundFood });
+
+  if (date && time && foodName && !isNaN(quantity) && foundFood) {
+    addEntryBtn.disabled = false;
+  } else {
+    addEntryBtn.disabled = true;
+  }
+}
+
+  // 全削除ボタン押下処理
   clearAllBtn.addEventListener('click', () => {
-    if (!calendarDate.value) return;
+    const dateKey = calendarDate.value;
+    if (!dateKey) return;
     if (confirm('本当に全て削除しますか？')) {
-      delete entriesByDate[calendarDate.value];
+      delete entriesByDate[dateKey];
       saveEntries();
       updateEntryTable();
     }
   });
 
-  // 日付変更時にテーブル更新
-  calendarDate.addEventListener('change', () => {
-    updateEntryTable();
-  });
+// 日付変更時にエントリー表更新
+calendarDate.addEventListener('change', updateEntryTable);
 
-  // 最初の表示更新
+  // 初期表示更新
   updateEntryTable();
 
   // カレンダー開閉
@@ -561,91 +664,80 @@ totalCalories.textContent = `合計: ${totalRounded} kcal`;
     calendarOpenBtn.setAttribute('aria-expanded', 'false');
   });
 
-  // 🔽 このあたりに追加
-  document.getElementById('prevMonthBtn').addEventListener('click', () => {
+  // カレンダー月切替ボタン
+  prevMonthBtn.addEventListener('click', () => {
     currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
     buildCalendar(formatDateToInput(currentCalendarDate));
   });
-
-  document.getElementById('nextMonthBtn').addEventListener('click', () => {
+  nextMonthBtn.addEventListener('click', () => {
     currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
     buildCalendar(formatDateToInput(currentCalendarDate));
   });
 
-  // カレンダー構築
-function buildCalendar(dateStr) {
-  const calendarGrid = document.getElementById('calendarGrid');
-  calendarGrid.innerHTML = '';
+  // カレンダー生成
+  function buildCalendar(dateStr) {
+    calendarGrid.innerHTML = '';
+    currentCalendarDate = new Date(dateStr);
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
 
-  currentCalendarDate = new Date(dateStr); // 表示中の年月日を更新
-  const year = currentCalendarDate.getFullYear();
-  const month = currentCalendarDate.getMonth();
+    calendarMonthLabel.textContent = `${year}年 ${month + 1}月`;
 
-  // 月表示更新
-  document.getElementById('calendarMonthLabel').textContent = `${year}年 ${month + 1}月`;
-
-  // 曜日見出し追加（日〜土）
-  ['日', '月', '火', '水', '木', '金', '土'].forEach(dayName => {
-    const dayEl = document.createElement('div');
-    dayEl.textContent = dayName;
-    dayEl.style.fontWeight = 'bold';
-    calendarGrid.appendChild(dayEl);
-  });
-
-  // 月初めの曜日
-  const firstDay = new Date(year, month, 1);
-  const startDay = firstDay.getDay();
-
-  // 月末日（その月の日数）
-  const lastDate = new Date(year, month + 1, 0).getDate();
-
-  // 空白セルを先頭に配置（startDay分）
-  for (let i = 0; i < startDay; i++) {
-    const emptyCell = document.createElement('div');
-    emptyCell.classList.add('empty');
-    calendarGrid.appendChild(emptyCell);
-  }
-
-  // 日付セル生成
-  for (let day = 1; day <= lastDate; day++) {
-    const dateCell = document.createElement('div');
-  dateCell.classList.add('day'); 
-    dateCell.tabIndex = 0; // キーボードフォーカス可能
-    dateCell.textContent = day;
-
-    // 該当日付のカロリー合計があれば表示
-    const key = formatDateToInput(new Date(year, month, day));
-    let dayTotal = 0;
-    if (entriesByDate[key]) {
-      entriesByDate[key].forEach(entry => {
-        dayTotal += entry.kcal * entry.quantity;
-      });
-    }
-    if (dayTotal > 0) {
-      const kcalLabel = document.createElement('div');
-      kcalLabel.className = 'kcalLabel';
-      kcalLabel.textContent = `${Math.ceil(dayTotal)} kcal`;
-      dateCell.appendChild(kcalLabel);
-    }
-
-    // クリックで日付選択してカレンダー閉じる
-    dateCell.addEventListener('click', () => {
-      calendarDate.value = key;
-      updateEntryTable();
-      calendarModal.style.display = 'none';
-      calendarModal.setAttribute('aria-hidden', 'true');
-      calendarOpenBtn.setAttribute('aria-expanded', 'false');
-      calendarOpenBtn.focus();
+    ['日', '月', '火', '水', '木', '金', '土'].forEach(dayName => {
+      const dayEl = document.createElement('div');
+      dayEl.textContent = dayName;
+      dayEl.style.fontWeight = 'bold';
+      calendarGrid.appendChild(dayEl);
     });
 
-    calendarGrid.appendChild(dateCell);
+    const firstDay = new Date(year, month, 1);
+    const startDay = firstDay.getDay();
+    const lastDate = new Date(year, month + 1, 0).getDate();
+
+    for (let i = 0; i < startDay; i++) {
+      const emptyCell = document.createElement('div');
+      emptyCell.classList.add('empty');
+      calendarGrid.appendChild(emptyCell);
+    }
+
+    for (let day = 1; day <= lastDate; day++) {
+      const dateCell = document.createElement('div');
+      dateCell.classList.add('day');
+      dateCell.tabIndex = 0;
+      dateCell.textContent = day;
+
+      const key = formatDateToInput(new Date(year, month, day));
+      let dayTotal = 0;
+      if (entriesByDate[key]) {
+        entriesByDate[key].forEach(entry => {
+          dayTotal += entry.kcal * entry.quantity;
+        });
+      }
+      if (dayTotal > 0) {
+        const kcalLabel = document.createElement('div');
+        kcalLabel.className = 'kcalLabel';
+        kcalLabel.textContent = `${Math.ceil(dayTotal)} kcal`;
+        dateCell.appendChild(kcalLabel);
+      }
+
+      dateCell.addEventListener('click', () => {
+        calendarDate.value = key;
+        updateEntryTable();
+        calendarModal.style.display = 'none';
+        calendarModal.setAttribute('aria-hidden', 'true');
+        calendarOpenBtn.setAttribute('aria-expanded', 'false');
+        calendarOpenBtn.focus();
+      });
+
+      calendarGrid.appendChild(dateCell);
+    }
   }
-}
 
   // 食品登録モーダル開閉
   openRegisterBtn.addEventListener('click', () => {
     registerModal.style.display = 'block';
     registerModal.setAttribute('aria-hidden', 'false');
+    registerModal.removeAttribute('inert');
     newFoodName.value = '';
     newFoodCalories.value = '';
     updateFoodListDisplay();
@@ -653,77 +745,42 @@ function buildCalendar(dateStr) {
   registerCloseBtn.addEventListener('click', () => {
     registerModal.style.display = 'none';
     registerModal.setAttribute('aria-hidden', 'true');
+    registerModal.setAttribute('inert', 'true');
+    calendarOpenBtn.focus();
   });
 
-  // 食品登録リスト表示
-function updateFoodListDisplay() {
-  foodListDisplay.innerHTML = '';
-  if (customFoods.length === 0) {
-    foodListDisplay.textContent = '登録された食品はありません。';
-    return;
-  }
-  customFoods.forEach((f, i) => {
-    const li = document.createElement('li');
-    li.style.display = 'flex';
-    li.style.alignItems = 'center';
-    li.style.gap = '8px';
+addFoodItemBtn.addEventListener('click', () => {
+  const name = newFoodName.value.trim();
+  const kcalStr = newFoodCalories.value.trim();
+  const kcal = parseFloat(kcalStr);
 
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.dataset.index = i;
+  if (!name || isNaN(kcal) || kcal <= 0) return; // 入力不正なら何もせず終了
 
-    const label = document.createElement('label');
-    label.textContent = `${f.name} : ${f.kcal} kcal`;
-
-    li.appendChild(checkbox);
-    li.appendChild(label);
-    foodListDisplay.appendChild(li);
-  });
-}
-const deleteSelectedFoodsBtn = document.getElementById('deleteSelectedFoodsBtn');
-
-deleteSelectedFoodsBtn.addEventListener('click', () => {
-  // チェックされたインデックスを集める
-  const checkboxes = foodListDisplay.querySelectorAll('input[type="checkbox"]:checked');
-  if (checkboxes.length === 0) {
-    alert('削除する食品を選択してください。');
-    return;
-  }
-  if (!confirm('選択した食品を削除しますか？')) {
+  if (customFoods.some(f => f.name === name)) {
+    alert('同じ名前の食品が既に登録されています。');
     return;
   }
 
-  // 選択されたインデックスを逆順にして削除（配列のindex崩れ防止）
-  const indices = Array.from(checkboxes).map(cb => parseInt(cb.dataset.index, 10)).sort((a,b) => b - a);
-  indices.forEach(i => {
-    customFoods.splice(i, 1);
-  });
-
+  customFoods.push({ name, kcal, isCustom: true });
   saveCustomFoods();
-  updateFoodSelect();
   updateFoodListDisplay();
+  newFoodName.value = '';
+  newFoodCalories.value = '';
 });
 
-  // 食品追加登録
-  addFoodItemBtn.addEventListener('click', () => {
-    const name = newFoodName.value.trim();
-    const kcal = parseInt(newFoodCalories.value, 10);
-    if (!name || isNaN(kcal) || kcal <= 0) {
-      alert('正しい食品名とカロリーを入力してください。');
+  // 食品削除ボタン
+  deleteSelectedFoodsBtn.addEventListener('click', () => {
+    const checkboxes = foodListDisplay.querySelectorAll('input[type=checkbox]:checked');
+    if (checkboxes.length === 0) {
       return;
     }
-    if (customFoods.find(f => f.name === name)) {
-      alert('既に同じ名前の食品が登録されています。');
-      return;
-    }
-    customFoods.push({ name, kcal });
-    saveCustomFoods();
-    updateFoodSelect();
-    updateFoodListDisplay();
+    if (!confirm('選択した食品を削除してよろしいですか？')) return;
 
-    newFoodName.value = '';
-    newFoodCalories.value = '';
-    newFoodName.focus();
+    // 逆順で削除しないとインデックスずれるので注意
+    const indices = Array.from(checkboxes).map(cb => parseInt(cb.dataset.index, 10)).sort((a,b) => b - a);
+    indices.forEach(i => customFoods.splice(i, 1));
+    saveCustomFoods();
+    updateFoodListDisplay();
   });
 
 })();
