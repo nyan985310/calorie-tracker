@@ -50,13 +50,31 @@ border: none;
     background-color: #ff4d4d;
   }
 
-  /* 入力フォーム全体 */
-  .form-row {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 8px;
-    align-items: center;
-  }
+.form-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+#foodInput {
+  flex-grow: 1;       /* 空きスペースをできるだけ使う */
+  min-width: 0;       /* flex-grow時のはみ出し防止 */
+  padding: 4px 6px;
+  border: 1.5px solid #ff9999;
+  border-radius: 5px;
+  font-size: 0.95rem;
+}
+
+#quantitySelect {
+  flex-shrink: 0;     /* 縮まらない */
+  width: 80px;        /* 固定幅か適度な幅 */
+  padding: 4px 6px;
+  border: 1.5px solid #ff9999;
+  border-radius: 5px;
+  font-size: 0.95rem;
+}
+
   .form-label {
     min-width: 60px;
     color: #cc0033;
@@ -71,13 +89,6 @@ border: none;
     border-radius: 5px;
     font-size: 0.95rem;
   }
-input[type="text"] {
-  flex-grow: 1;
-  padding: 4px 6px;
-  border: 1.5px solid #ff9999;
-  border-radius: 5px;
-  font-size: 0.95rem;
-}
 
   select:invalid {
     color: #999999;
